@@ -28,17 +28,20 @@
         /// </summary>
         private void InitializeComponent()
         {
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(FormBooks));
             panelHeader = new Panel();
             btnIssueBook = new Button();
             btnAddBook = new Button();
             pbLogo = new PictureBox();
             dgvBooks = new DataGridView();
             panelFilter = new Panel();
-            tbSearch = new TextBox();
-            cbGenreFilter = new ComboBox();
-            cbSort = new ComboBox();
-            label1 = new Label();
+            lblSort = new Label();
+            lblGenre = new Label();
             lblCount = new Label();
+            lblSearch = new Label();
+            cbSort = new ComboBox();
+            cbGenreFilter = new ComboBox();
+            tbSearch = new TextBox();
             panelHeader.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)pbLogo).BeginInit();
             ((System.ComponentModel.ISupportInitialize)dgvBooks).BeginInit();
@@ -96,69 +99,89 @@
             dgvBooks.BackgroundColor = Color.AliceBlue;
             dgvBooks.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.AutoSize;
             dgvBooks.Dock = DockStyle.Fill;
-            dgvBooks.Location = new Point(0, 85);
+            dgvBooks.Location = new Point(0, 150);
             dgvBooks.Name = "dgvBooks";
-            dgvBooks.Size = new Size(1084, 576);
+            dgvBooks.Size = new Size(1084, 511);
             dgvBooks.TabIndex = 1;
             // 
             // panelFilter
             // 
+            panelFilter.Controls.Add(lblSort);
+            panelFilter.Controls.Add(lblGenre);
             panelFilter.Controls.Add(lblCount);
-            panelFilter.Controls.Add(label1);
+            panelFilter.Controls.Add(lblSearch);
             panelFilter.Controls.Add(cbSort);
             panelFilter.Controls.Add(cbGenreFilter);
             panelFilter.Controls.Add(tbSearch);
             panelFilter.Dock = DockStyle.Top;
             panelFilter.Location = new Point(0, 85);
             panelFilter.Name = "panelFilter";
-            panelFilter.Size = new Size(1084, 50);
+            panelFilter.Size = new Size(1084, 65);
             panelFilter.TabIndex = 2;
             // 
-            // tbSearch
+            // lblSort
             // 
-            tbSearch.Location = new Point(15, 12);
-            tbSearch.Name = "tbSearch";
-            tbSearch.PlaceholderText = "Поиск по названию или автору...";
-            tbSearch.Size = new Size(240, 25);
-            tbSearch.TabIndex = 0;
+            lblSort.AutoSize = true;
+            lblSort.Location = new Point(520, 16);
+            lblSort.Name = "lblSort";
+            lblSort.Size = new Size(84, 17);
+            lblSort.TabIndex = 6;
+            lblSort.Text = "Сортировка:";
             // 
-            // cbGenreFilter
+            // lblGenre
             // 
-            cbGenreFilter.DropDownStyle = ComboBoxStyle.DropDownList;
-            cbGenreFilter.FormattingEnabled = true;
-            cbGenreFilter.Location = new Point(270, 12);
-            cbGenreFilter.Name = "cbGenreFilter";
-            cbGenreFilter.Size = new Size(180, 25);
-            cbGenreFilter.TabIndex = 1;
-            // 
-            // cbSort
-            // 
-            cbSort.DropDownStyle = ComboBoxStyle.DropDownList;
-            cbSort.FormattingEnabled = true;
-            cbSort.Location = new Point(465, 12);
-            cbSort.Name = "cbSort";
-            cbSort.Size = new Size(220, 25);
-            cbSort.TabIndex = 2;
-            // 
-            // label1
-            // 
-            label1.AutoSize = true;
-            label1.Location = new Point(473, 20);
-            label1.Name = "label1";
-            label1.Size = new Size(42, 17);
-            label1.TabIndex = 3;
-            label1.Text = "label1";
+            lblGenre.AutoSize = true;
+            lblGenre.Location = new Point(290, 16);
+            lblGenre.Name = "lblGenre";
+            lblGenre.Size = new Size(45, 17);
+            lblGenre.TabIndex = 5;
+            lblGenre.Text = "Жанр:";
             // 
             // lblCount
             // 
             lblCount.AutoSize = true;
             lblCount.Font = new Font("Times New Roman", 11.25F, FontStyle.Bold, GraphicsUnit.Point, 0);
             lblCount.ForeColor = Color.FromArgb(74, 111, 165);
-            lblCount.Location = new Point(710, 16);
+            lblCount.Location = new Point(835, 16);
             lblCount.Name = "lblCount";
             lblCount.Size = new Size(142, 17);
             lblCount.TabIndex = 4;
             lblCount.Text = "Отображено: 0 из 0";
+            // 
+            // lblSearch
+            // 
+            lblSearch.AutoSize = true;
+            lblSearch.Location = new Point(15, 16);
+            lblSearch.Name = "lblSearch";
+            lblSearch.Size = new Size(50, 17);
+            lblSearch.TabIndex = 3;
+            lblSearch.Text = "Поиск:";
+            // 
+            // cbSort
+            // 
+            cbSort.DropDownStyle = ComboBoxStyle.DropDownList;
+            cbSort.FormattingEnabled = true;
+            cbSort.Location = new Point(615, 12);
+            cbSort.Name = "cbSort";
+            cbSort.Size = new Size(200, 25);
+            cbSort.TabIndex = 2;
+            // 
+            // cbGenreFilter
+            // 
+            cbGenreFilter.DropDownStyle = ComboBoxStyle.DropDownList;
+            cbGenreFilter.FormattingEnabled = true;
+            cbGenreFilter.Location = new Point(345, 12);
+            cbGenreFilter.Name = "cbGenreFilter";
+            cbGenreFilter.Size = new Size(160, 25);
+            cbGenreFilter.TabIndex = 1;
+            // 
+            // tbSearch
+            // 
+            tbSearch.Location = new Point(75, 12);
+            tbSearch.Name = "tbSearch";
+            tbSearch.PlaceholderText = "Поиск по названию или автору...";
+            tbSearch.Size = new Size(200, 25);
+            tbSearch.TabIndex = 0;
             // 
             // FormBooks
             // 
@@ -166,10 +189,11 @@
             AutoScaleMode = AutoScaleMode.Font;
             BackColor = Color.White;
             ClientSize = new Size(1084, 661);
-            Controls.Add(panelFilter);
             Controls.Add(dgvBooks);
+            Controls.Add(panelFilter);
             Controls.Add(panelHeader);
             Font = new Font("Times New Roman", 11.25F, FontStyle.Regular, GraphicsUnit.Point, 0);
+            Icon = (Icon)resources.GetObject("$this.Icon");
             Name = "FormBooks";
             StartPosition = FormStartPosition.CenterScreen;
             Text = "Каталог книг — Читай-город";
@@ -191,8 +215,10 @@
         private Panel panelFilter;
         private TextBox tbSearch;
         private Label lblCount;
-        private Label label1;
+        private Label lblSearch;
         private ComboBox cbSort;
         private ComboBox cbGenreFilter;
+        private Label lblGenre;
+        private Label lblSort;
     }
 }
