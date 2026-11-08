@@ -16,6 +16,12 @@ namespace ChitayGorod
             ApplyStyleGuide();
             ConfigureBooksGrid();
             LoadBooksList();
+
+            this.Shown += (s, e) =>
+            {
+                dgvBooks.ClearSelection();
+                dgvBooks.CurrentCell = null;
+            };
         }
 
         private void ApplyStyleGuide()
@@ -132,6 +138,7 @@ namespace ChitayGorod
                     }
 
                     dgvBooks.ClearSelection();
+                    dgvBooks.CurrentCell = null;
                 }
             }
             catch (Exception ex)
