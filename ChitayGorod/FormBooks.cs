@@ -10,11 +10,14 @@ namespace ChitayGorod
 {
     public partial class FormBooks : Form
     {
+        private int _totalBooksCount = 0;
+
         public FormBooks()
         {
             InitializeComponent();
             ApplyStyleGuide();
             ConfigureBooksGrid();
+            InitFilterControls();
             LoadBooksList();
 
             this.Shown += (s, e) =>
@@ -28,6 +31,7 @@ namespace ChitayGorod
         {
             this.BackColor = ColorTranslator.FromHtml("#FFFFFF");
             panelHeader.BackColor = ColorTranslator.FromHtml("#F0F8FF");
+            panelFilter.BackColor = ColorTranslator.FromHtml("#FFFFFF");
         }
 
         private void ConfigureBooksGrid()
@@ -75,19 +79,83 @@ namespace ChitayGorod
             dgvBooks.Columns.Add(colCopies);
         }
 
+        private void InitFilterControls()
+        {
+            cbSort.Items.Clear();
+            cbSort.Items.Add("Без сортировки");
+            cbSort.Items.Add("По названию (А-Я)");
+            cbSort.Items.Add("По названию (Я-А)");
+            cbSort.Items.Add("По остатку (по возрастанию)");
+            cbSort.Items.Add("По остатку (по убыванию)");
+            cbSort.SelectedIndex = 0;
+
+            cbGenreFilter.Items.Clear();
+            cbGenreFilter.Items.Add("Все жанры");
+            try
+            {
+                using (LibraryContext db = new LibraryContext())
+                {
+                    var genres = db.Genres.OrderBy(g => g.GenreName).Select(g => g.GenreName).ToList();
+                    cbGenreFilter.Items.AddRange(genres.ToArray());
+                }
+            }
+            catch { }
+            cbGenreFilter.SelectedIndex = 0;
+
+            tbSearch.TextChanged += (s, e) => LoadBooksList();
+            cbGenreFilter.SelectedIndexChanged += (s, e) => LoadBooksList();
+            cbSort.SelectedIndexChanged += (s, e) => LoadBooksList();
+        }
+
         private void LoadBooksList()
         {
             try
             {
                 using (LibraryContext db = new LibraryContext())
                 {
-                    var booksList = db.Books
+                    _totalBooksCount = db.Books.Count();
+
+                    var query = db.Books
                         .Include(b => b.Author)
                         .Include(b => b.Genre)
                         .Include(b => b.Publisher)
                         .Include(b => b.BookLoans)
-                        .OrderBy(b => b.BookId)
-                        .ToList();
+                        .AsQueryable();
+
+                    string searchText = tbSearch.Text.Trim().ToLower();
+                    if (!string.IsNullOrWhiteSpace(searchText))
+                    {
+                        query = query.Where(b =>
+                            b.Title.ToLower().Contains(searchText) ||
+                            b.Author.AuthorName.ToLower().Contains(searchText));
+                    }
+
+                    if (cbGenreFilter.SelectedIndex > 0)
+                    {
+                        string selectedGenre = cbGenreFilter.SelectedItem?.ToString() ?? "";
+                        query = query.Where(b => b.Genre.GenreName == selectedGenre);
+                    }
+
+                    switch (cbSort.SelectedIndex)
+                    {
+                        case 1:
+                            query = query.OrderBy(b => b.Title);
+                            break;
+                        case 2:
+                            query = query.OrderByDescending(b => b.Title);
+                            break;
+                        case 3:
+                            query = query.OrderBy(b => b.AvailableCopies);
+                            break;
+                        case 4:
+                            query = query.OrderByDescending(b => b.AvailableCopies);
+                            break;
+                        default:
+                            query = query.OrderBy(b => b.BookId);
+                            break;
+                    }
+
+                    var booksList = query.ToList();
 
                     dgvBooks.Rows.Clear();
                     DateOnly currentDate = DateOnly.FromDateTime(DateTime.Now);
@@ -137,6 +205,7 @@ namespace ChitayGorod
                         }
                     }
 
+                    lblCount.Text = $"Отображено: {booksList.Count} из {_totalBooksCount}";
                     dgvBooks.ClearSelection();
                     dgvBooks.CurrentCell = null;
                 }
