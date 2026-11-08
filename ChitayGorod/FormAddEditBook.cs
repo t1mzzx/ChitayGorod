@@ -46,19 +46,19 @@ namespace ChitayGorod
             using var db = new LibraryContext();
 
             var authors = db.Authors.OrderBy(a => a.AuthorName).ToList();
-            cbAuthor.DataSource = authors;
             cbAuthor.DisplayMember = "AuthorName";
             cbAuthor.ValueMember = "AuthorId";
+            cbAuthor.DataSource = authors;
 
             var genres = db.Genres.OrderBy(g => g.GenreName).ToList();
-            cbGenre.DataSource = genres;
             cbGenre.DisplayMember = "GenreName";
             cbGenre.ValueMember = "GenreId";
+            cbGenre.DataSource = genres;
 
             var publishers = db.Publishers.OrderBy(p => p.PublisherName).ToList();
-            cbPublisher.DataSource = publishers;
             cbPublisher.DisplayMember = "PublisherName";
             cbPublisher.ValueMember = "PublisherId";
+            cbPublisher.DataSource = publishers;
         }
 
         private void FillBookData(Book book)
@@ -156,14 +156,18 @@ namespace ChitayGorod
 
                 if (_bookToEdit == null)
                 {
+                    var rnd = new Random();
+                    string generatedIsbn = $"978-5-{rnd.Next(10, 99)}-{rnd.Next(1000, 9999)}-{rnd.Next(1, 9)}";
+
                     var newBook = new Book
                     {
                         Title = tbTitle.Text.Trim(),
-                        AuthorId = (int)cbAuthor.SelectedValue,
-                        GenreId = (int)cbGenre.SelectedValue,
-                        PublisherId = (int)cbPublisher.SelectedValue,
+                        AuthorId = Convert.ToInt32(cbAuthor.SelectedValue),
+                        GenreId = Convert.ToInt32(cbGenre.SelectedValue),
+                        PublisherId = Convert.ToInt32(cbPublisher.SelectedValue),
                         PublicationYear = (short)numYear.Value,
                         Pages = (short)numPages.Value,
+                        Isbn = generatedIsbn,
                         TotalCopies = (int)numTotalCopies.Value,
                         AvailableCopies = (int)numTotalCopies.Value,
                         Annotation = string.IsNullOrWhiteSpace(tbAnnotation.Text) ? null : tbAnnotation.Text.Trim(),
@@ -178,9 +182,9 @@ namespace ChitayGorod
                     if (book != null)
                     {
                         book.Title = tbTitle.Text.Trim();
-                        book.AuthorId = (int)cbAuthor.SelectedValue;
-                        book.GenreId = (int)cbGenre.SelectedValue;
-                        book.PublisherId = (int)cbPublisher.SelectedValue;
+                        book.AuthorId = Convert.ToInt32(cbAuthor.SelectedValue);
+                        book.GenreId = Convert.ToInt32(cbGenre.SelectedValue);
+                        book.PublisherId = Convert.ToInt32(cbPublisher.SelectedValue);
                         book.PublicationYear = (short)numYear.Value;
                         book.Pages = (short)numPages.Value;
 
@@ -199,7 +203,8 @@ namespace ChitayGorod
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Ошибка сохранения: {ex.Message}", "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                string detailedError = ex.InnerException != null ? ex.InnerException.Message : ex.Message;
+                MessageBox.Show($"Ошибка сохранения: {detailedError}", "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
 

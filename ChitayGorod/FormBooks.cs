@@ -10,250 +10,243 @@ namespace ChitayGorod
 {
     public partial class FormBooks : Form
     {
-        private int _totalBooksCount = 0;
-
         public FormBooks()
         {
             InitializeComponent();
-            ApplyStyleGuide();
-            ConfigureBooksGrid();
-            InitFilterControls();
+            ApplyCustomStyles();
+            BindEvents();
+            LoadGenresFilter();
+            SetupSorting();
             LoadBooksList();
-
-            this.Shown += (s, e) =>
-            {
-                dgvBooks.ClearSelection();
-                dgvBooks.CurrentCell = null;
-            };
         }
 
-        private void ApplyStyleGuide()
+        private void BindEvents()
+        {
+            tbSearch.TextChanged -= tbSearch_TextChanged;
+            tbSearch.TextChanged += tbSearch_TextChanged;
+
+            cbGenreFilter.SelectedIndexChanged -= cbGenreFilter_SelectedIndexChanged;
+            cbGenreFilter.SelectedIndexChanged += cbGenreFilter_SelectedIndexChanged;
+
+            cbSort.SelectedIndexChanged -= cbSort_SelectedIndexChanged;
+            cbSort.SelectedIndexChanged += cbSort_SelectedIndexChanged;
+        }
+
+        private void ApplyCustomStyles()
         {
             this.BackColor = ColorTranslator.FromHtml("#FFFFFF");
-            panelHeader.BackColor = ColorTranslator.FromHtml("#F0F8FF");
-            panelFilter.BackColor = ColorTranslator.FromHtml("#FFFFFF");
-        }
+            this.Font = new Font("Times New Roman", 10.5f);
 
-        private void ConfigureBooksGrid()
-        {
-            dgvBooks.Columns.Clear();
-            dgvBooks.AutoGenerateColumns = false;
+            panelHeader.BackColor = ColorTranslator.FromHtml("#F0F8FF");
+
+            btnAddBook.BackColor = ColorTranslator.FromHtml("#4A6FA5");
+            btnAddBook.ForeColor = Color.White;
+            btnAddBook.FlatStyle = FlatStyle.Flat;
+
+            btnIssueBook.BackColor = ColorTranslator.FromHtml("#4A6FA5");
+            btnIssueBook.ForeColor = Color.White;
+            btnIssueBook.FlatStyle = FlatStyle.Flat;
+
+            dgvBooks.BackgroundColor = Color.White;
+            dgvBooks.BorderStyle = BorderStyle.FixedSingle;
+            dgvBooks.CellBorderStyle = DataGridViewCellBorderStyle.Single;
+            dgvBooks.GridColor = Color.LightGray;
+            dgvBooks.ColumnHeadersVisible = false;
+            dgvBooks.RowHeadersVisible = false;
+            dgvBooks.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
+            dgvBooks.MultiSelect = false;
             dgvBooks.AllowUserToAddRows = false;
             dgvBooks.AllowUserToDeleteRows = false;
             dgvBooks.ReadOnly = true;
-            dgvBooks.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
-            dgvBooks.MultiSelect = false;
-            dgvBooks.RowHeadersVisible = false;
-            dgvBooks.ColumnHeadersVisible = false;
-            dgvBooks.AutoSizeRowsMode = DataGridViewAutoSizeRowsMode.AllCells;
-
-            dgvBooks.BackgroundColor = ColorTranslator.FromHtml("#F0F8FF");
-            dgvBooks.DefaultCellStyle.Font = new Font("Times New Roman", 11);
-            dgvBooks.DefaultCellStyle.SelectionBackColor = ColorTranslator.FromHtml("#4A6FA5");
-            dgvBooks.DefaultCellStyle.SelectionForeColor = Color.White;
-
-            DataGridViewImageColumn colPhoto = new DataGridViewImageColumn();
-            colPhoto.Name = "colPhoto";
-            colPhoto.ImageLayout = DataGridViewImageCellLayout.Zoom;
-            colPhoto.Width = 140;
-            colPhoto.AutoSizeMode = DataGridViewAutoSizeColumnMode.None;
-            colPhoto.DefaultCellStyle.Padding = new Padding(6);
-
-            DataGridViewTextBoxColumn colInfo = new DataGridViewTextBoxColumn();
-            colInfo.Name = "colInfo";
-            colInfo.AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill;
-            colInfo.FillWeight = 75;
-            colInfo.DefaultCellStyle.WrapMode = DataGridViewTriState.True;
-            colInfo.DefaultCellStyle.Padding = new Padding(10, 8, 10, 8);
-
-            DataGridViewTextBoxColumn colCopies = new DataGridViewTextBoxColumn();
-            colCopies.Name = "colCopies";
-            colCopies.AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill;
-            colCopies.FillWeight = 25;
-            colCopies.DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter;
-            colCopies.DefaultCellStyle.WrapMode = DataGridViewTriState.True;
-            colCopies.DefaultCellStyle.Font = new Font("Times New Roman", 12, FontStyle.Bold);
-
-            dgvBooks.Columns.Add(colPhoto);
-            dgvBooks.Columns.Add(colInfo);
-            dgvBooks.Columns.Add(colCopies);
+            dgvBooks.RowTemplate.Height = 135;
         }
 
-        private void InitFilterControls()
+        private void LoadGenresFilter()
+        {
+            using var db = new LibraryContext();
+            var genres = db.Genres.OrderBy(g => g.GenreName).ToList();
+
+            genres.Insert(0, new Genre { GenreId = 0, GenreName = "Все жанры" });
+
+            cbGenreFilter.DisplayMember = "GenreName";
+            cbGenreFilter.ValueMember = "GenreId";
+            cbGenreFilter.DataSource = genres;
+            cbGenreFilter.SelectedIndex = 0;
+        }
+
+        private void SetupSorting()
         {
             cbSort.Items.Clear();
             cbSort.Items.Add("Без сортировки");
-            cbSort.Items.Add("По названию (А-Я)");
-            cbSort.Items.Add("По названию (Я-А)");
-            cbSort.Items.Add("По остатку (по возрастанию)");
-            cbSort.Items.Add("По остатку (по убыванию)");
+            cbSort.Items.Add("По возрастанию остатка");
+            cbSort.Items.Add("По убыванию остатка");
             cbSort.SelectedIndex = 0;
-
-            cbGenreFilter.Items.Clear();
-            cbGenreFilter.Items.Add("Все жанры");
-            try
-            {
-                using (LibraryContext db = new LibraryContext())
-                {
-                    var genres = db.Genres.OrderBy(g => g.GenreName).Select(g => g.GenreName).ToList();
-                    cbGenreFilter.Items.AddRange(genres.ToArray());
-                }
-            }
-            catch { }
-            cbGenreFilter.SelectedIndex = 0;
-
-            tbSearch.TextChanged += (s, e) => LoadBooksList();
-            cbGenreFilter.SelectedIndexChanged += (s, e) => LoadBooksList();
-            cbSort.SelectedIndexChanged += (s, e) => LoadBooksList();
         }
 
         private void LoadBooksList()
         {
-            try
+            if (dgvBooks.Columns.Count == 0)
             {
-                using (LibraryContext db = new LibraryContext())
+                var colCover = new DataGridViewImageColumn
                 {
-                    _totalBooksCount = db.Books.Count();
+                    Name = "colCover",
+                    Width = 120,
+                    ImageLayout = DataGridViewImageCellLayout.Zoom
+                };
 
-                    var query = db.Books
-                        .Include(b => b.Author)
-                        .Include(b => b.Genre)
-                        .Include(b => b.Publisher)
-                        .Include(b => b.BookLoans)
-                        .AsQueryable();
+                var colInfo = new DataGridViewTextBoxColumn
+                {
+                    Name = "colInfo",
+                    AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill
+                };
+                colInfo.DefaultCellStyle.WrapMode = DataGridViewTriState.True;
 
-                    string searchText = tbSearch.Text.Trim().ToLower();
-                    if (!string.IsNullOrWhiteSpace(searchText))
-                    {
-                        query = query.Where(b =>
-                            b.Title.ToLower().Contains(searchText) ||
-                            b.Author.AuthorName.ToLower().Contains(searchText));
-                    }
+                var colCopies = new DataGridViewTextBoxColumn
+                {
+                    Name = "colCopies",
+                    Width = 200
+                };
+                colCopies.DefaultCellStyle.WrapMode = DataGridViewTriState.True;
+                colCopies.DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter;
 
-                    if (cbGenreFilter.SelectedIndex > 0)
-                    {
-                        string selectedGenre = cbGenreFilter.SelectedItem?.ToString() ?? "";
-                        query = query.Where(b => b.Genre.GenreName == selectedGenre);
-                    }
+                dgvBooks.Columns.AddRange(colCover, colInfo, colCopies);
+            }
 
-                    switch (cbSort.SelectedIndex)
-                    {
-                        case 1:
-                            query = query.OrderBy(b => b.Title);
-                            break;
-                        case 2:
-                            query = query.OrderByDescending(b => b.Title);
-                            break;
-                        case 3:
-                            query = query.OrderBy(b => b.AvailableCopies);
-                            break;
-                        case 4:
-                            query = query.OrderByDescending(b => b.AvailableCopies);
-                            break;
-                        default:
-                            query = query.OrderBy(b => b.BookId);
-                            break;
-                    }
+            dgvBooks.Rows.Clear();
 
-                    var booksList = query.ToList();
+            using var db = new LibraryContext();
 
-                    dgvBooks.Rows.Clear();
-                    DateOnly currentDate = DateOnly.FromDateTime(DateTime.Now);
+            var query = db.Books
+                .Include(b => b.Author)
+                .Include(b => b.Genre)
+                .Include(b => b.Publisher)
+                .AsQueryable();
 
-                    foreach (Book book in booksList)
-                    {
-                        Image coverImage = LoadBookCover(book.CoverImage);
+            int totalCount = query.Count();
 
-                        string annotationText = string.IsNullOrWhiteSpace(book.Annotation)
-                            ? "Отсутствует"
-                            : book.Annotation;
+            if (cbGenreFilter.SelectedItem is Genre selectedGenre && selectedGenre.GenreId > 0)
+            {
+                query = query.Where(b => b.GenreId == selectedGenre.GenreId);
+            }
 
-                        string bookDetails =
-                            $"Название книги: {book.Title}\n" +
-                            $"Автор: {book.Author.AuthorName}\n" +
-                            $"ISBN: {book.Isbn} | Жанр: {book.Genre.GenreName}\n" +
-                            $"Издательство: {book.Publisher.PublisherName} | Год издания: {book.PublicationYear} | Страниц: {book.Pages}\n" +
-                            $"Аннотация: {annotationText}";
+            string search = tbSearch.Text.Trim().ToLower();
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                query = query.Where(b => b.Title.ToLower().Contains(search) ||
+                                         (b.Author != null && b.Author.AuthorName.ToLower().Contains(search)));
+            }
 
-                        string copiesInfo =
-                            $"Всего экземпляров: {book.TotalCopies}\n" +
-                            $"Доступно: {book.AvailableCopies}";
+            if (cbSort.SelectedIndex == 1)
+            {
+                query = query.OrderBy(b => b.AvailableCopies);
+            }
+            else if (cbSort.SelectedIndex == 2)
+            {
+                query = query.OrderByDescending(b => b.AvailableCopies);
+            }
+            else
+            {
+                query = query.OrderBy(b => b.BookId);
+            }
 
-                        int rowIndex = dgvBooks.Rows.Add(coverImage, bookDetails, copiesInfo);
-                        DataGridViewRow currentRow = dgvBooks.Rows[rowIndex];
-                        currentRow.MinimumHeight = 140;
+            var books = query.ToList();
 
-                        bool isOverdueMoreThan30Days = book.BookLoans.Any(loan =>
-                            loan.ReturnDate == null &&
-                            (currentDate.DayNumber - loan.LoanDate.DayNumber) > 30);
+            foreach (var book in books)
+            {
+                Image coverImg = GetBookCover(book.CoverImage);
 
-                        if (book.AvailableCopies == 0)
-                        {
-                            currentRow.DefaultCellStyle.BackColor = ColorTranslator.FromHtml("#FFCCCC");
-                        }
-                        else if (isOverdueMoreThan30Days)
-                        {
-                            currentRow.DefaultCellStyle.BackColor = ColorTranslator.FromHtml("#D4EDDA");
-                        }
-                        else if (book.AvailableCopies >= 1 && book.AvailableCopies <= 2)
-                        {
-                            currentRow.DefaultCellStyle.BackColor = ColorTranslator.FromHtml("#FFF3CD");
-                        }
-                        else
-                        {
-                            currentRow.DefaultCellStyle.BackColor = ColorTranslator.FromHtml("#FFFFFF");
-                        }
-                    }
+                string authorName = book.Author?.AuthorName ?? "Не указан";
+                string genreName = book.Genre?.GenreName ?? "Не указан";
+                string publisherName = book.Publisher?.PublisherName ?? "Не указано";
 
-                    lblCount.Text = $"Отображено: {booksList.Count} из {_totalBooksCount}";
-                    dgvBooks.ClearSelection();
-                    dgvBooks.CurrentCell = null;
+                string bookInfo = $"Название книги: {book.Title}\n" +
+                                  $"Автор: {authorName}\n" +
+                                  $"Жанр: {genreName}\n" +
+                                  $"Издательство: {publisherName} | Год издания: {book.PublicationYear} | Страниц: {book.Pages}\n" +
+                                  $"Аннотация: {book.Annotation ?? "Отсутствует"}";
+
+                string copiesInfo = $"Всего экземпляров: {book.TotalCopies}\n" +
+                                    $"Доступно: {book.AvailableCopies}";
+
+                int rowIndex = dgvBooks.Rows.Add(coverImg, bookInfo, copiesInfo);
+                dgvBooks.Rows[rowIndex].Tag = book;
+
+                if (book.AvailableCopies <= 0)
+                {
+                    dgvBooks.Rows[rowIndex].DefaultCellStyle.BackColor = ColorTranslator.FromHtml("#FFD1D1");
+                }
+                else
+                {
+                    dgvBooks.Rows[rowIndex].DefaultCellStyle.BackColor = (rowIndex % 2 == 0)
+                        ? Color.White
+                        : ColorTranslator.FromHtml("#FFF8F0");
                 }
             }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"Ошибка загрузки каталога: {ex.Message}", "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error);
-            }
+
+            lblCount.Text = $"Отображено: {books.Count} из {totalCount}";
         }
 
-        private Image LoadBookCover(string? imagePath)
+        private Image GetBookCover(string? fileName)
         {
-            try
+            string placeholderPath = Path.Combine(Application.StartupPath, "Images", "book_placeholder.jpeg");
+
+            if (!string.IsNullOrWhiteSpace(fileName))
             {
-                if (!string.IsNullOrWhiteSpace(imagePath))
+                string fullPath = Path.Combine(Application.StartupPath, "Images", fileName);
+                if (File.Exists(fullPath))
                 {
-                    string fullPath = Path.Combine(Application.StartupPath, "Images", imagePath);
-                    if (File.Exists(fullPath)) return Image.FromFile(fullPath);
+                    using var stream = new FileStream(fullPath, FileMode.Open, FileAccess.Read);
+                    return Image.FromStream(stream);
                 }
-
-                string placeholder = Path.Combine(Application.StartupPath, "Images", "book_placeholder.jpeg");
-                if (File.Exists(placeholder)) return Image.FromFile(placeholder);
             }
-            catch { }
 
-            Bitmap fallback = new Bitmap(110, 140);
-            using (Graphics g = Graphics.FromImage(fallback))
+            if (File.Exists(placeholderPath))
             {
-                g.Clear(ColorTranslator.FromHtml("#F0F8FF"));
-                g.DrawRectangle(Pens.Gray, 0, 0, 109, 139);
-                g.DrawString("book_placeholder", new Font("Times New Roman", 9), Brushes.DimGray, 8, 60);
+                using var stream = new FileStream(placeholderPath, FileMode.Open, FileAccess.Read);
+                return Image.FromStream(stream);
             }
-            return fallback;
+
+            return new Bitmap(100, 140);
         }
 
-        private void btnAddBook_Click(object sender, EventArgs e)
+        private void tbSearch_TextChanged(object? sender, EventArgs e)
+        {
+            LoadBooksList();
+        }
+
+        private void cbGenreFilter_SelectedIndexChanged(object? sender, EventArgs e)
+        {
+            LoadBooksList();
+        }
+
+        private void cbSort_SelectedIndexChanged(object? sender, EventArgs e)
+        {
+            LoadBooksList();
+        }
+
+        private void btnAddBook_Click(object? sender, EventArgs e)
         {
             using (var form = new FormAddEditBook())
             {
                 if (form.ShowDialog() == DialogResult.OK)
                 {
                     LoadBooksList();
-                    MessageBox.Show("Книга успешно добавлена!", "Успех", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 }
             }
         }
 
-        private void dgvBooks_CellDoubleClick(object sender, DataGridViewCellEventArgs e)
+        private void btnIssueBook_Click(object? sender, EventArgs e)
+        {
+            using (var form = new FormIssueBook())
+            {
+                if (form.ShowDialog() == DialogResult.OK)
+                {
+                    LoadBooksList();
+                }
+            }
+        }
+
+        private void dgvBooks_CellDoubleClick(object? sender, DataGridViewCellEventArgs e)
         {
             if (e.RowIndex < 0) return;
 
@@ -264,19 +257,7 @@ namespace ChitayGorod
                     if (form.ShowDialog() == DialogResult.OK)
                     {
                         LoadBooksList();
-                        MessageBox.Show("Данные книги обновлены!", "Успех", MessageBoxButtons.OK, MessageBoxIcon.Information);
                     }
-                }
-            }
-        }
-
-        private void btnIssueBook_Click(object sender, EventArgs e)
-        {
-            using (var form = new FormIssueBook())
-            {
-                if (form.ShowDialog() == DialogResult.OK)
-                {
-                    LoadBooksList();
                 }
             }
         }
