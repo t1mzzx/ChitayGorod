@@ -240,5 +240,34 @@ namespace ChitayGorod
             }
             return fallback;
         }
+
+        private void btnAddBook_Click(object sender, EventArgs e)
+        {
+            using (var form = new FormAddEditBook())
+            {
+                if (form.ShowDialog() == DialogResult.OK)
+                {
+                    LoadBooksList();
+                    MessageBox.Show("Книга успешно добавлена!", "Успех", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                }
+            }
+        }
+
+        private void dgvBooks_CellDoubleClick(object sender, DataGridViewCellEventArgs e)
+        {
+            if (e.RowIndex < 0) return;
+
+            if (dgvBooks.Rows[e.RowIndex].Tag is Book selectedBook)
+            {
+                using (var form = new FormAddEditBook(selectedBook))
+                {
+                    if (form.ShowDialog() == DialogResult.OK)
+                    {
+                        LoadBooksList();
+                        MessageBox.Show("Данные книги обновлены!", "Успех", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    }
+                }
+            }
+        }
     }
 }

@@ -83,6 +83,7 @@
             btnAddBook.TabIndex = 1;
             btnAddBook.Text = "Добавить книгу";
             btnAddBook.UseVisualStyleBackColor = false;
+            btnAddBook.Click += btnAddBook_Click;
             // 
             // pbLogo
             // 
@@ -103,6 +104,7 @@
             dgvBooks.Name = "dgvBooks";
             dgvBooks.Size = new Size(1084, 511);
             dgvBooks.TabIndex = 1;
+            dgvBooks.CellDoubleClick += dgvBooks_CellDoubleClick;
             // 
             // panelFilter
             // 
