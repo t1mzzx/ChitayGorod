@@ -1,6 +1,6 @@
 ﻿namespace ChitayGorod
 {
-    partial class Form1
+    partial class FormBooks
     {
         /// <summary>
         ///  Required designer variable.
