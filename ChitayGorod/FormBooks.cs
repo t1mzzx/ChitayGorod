@@ -58,7 +58,7 @@ namespace ChitayGorod
             dgvBooks.AllowUserToAddRows = false;
             dgvBooks.AllowUserToDeleteRows = false;
             dgvBooks.ReadOnly = true;
-            dgvBooks.RowTemplate.Height = 135;
+            dgvBooks.RowTemplate.Height = 145;
         }
 
         private void LoadGenresFilter()
@@ -120,6 +120,7 @@ namespace ChitayGorod
                 .Include(b => b.Author)
                 .Include(b => b.Genre)
                 .Include(b => b.Publisher)
+                .Include(b => b.BookLoans)
                 .AsQueryable();
 
             int totalCount = query.Count();
@@ -150,6 +151,7 @@ namespace ChitayGorod
             }
 
             var books = query.ToList();
+            DateTime thirtyDaysAgo = DateTime.Today.AddDays(-30);
 
             foreach (var book in books)
             {
@@ -158,11 +160,13 @@ namespace ChitayGorod
                 string authorName = book.Author?.AuthorName ?? "Не указан";
                 string genreName = book.Genre?.GenreName ?? "Не указан";
                 string publisherName = book.Publisher?.PublisherName ?? "Не указано";
+                string isbn = string.IsNullOrWhiteSpace(book.Isbn) ? "Не указан" : book.Isbn;
 
                 string bookInfo = $"Название книги: {book.Title}\n" +
                                   $"Автор: {authorName}\n" +
                                   $"Жанр: {genreName}\n" +
                                   $"Издательство: {publisherName} | Год издания: {book.PublicationYear} | Страниц: {book.Pages}\n" +
+                                  $"ISBN: {isbn}\n" +
                                   $"Аннотация: {book.Annotation ?? "Отсутствует"}";
 
                 string copiesInfo = $"Всего экземпляров: {book.TotalCopies}\n" +
@@ -171,12 +175,28 @@ namespace ChitayGorod
                 int rowIndex = dgvBooks.Rows.Add(coverImg, bookInfo, copiesInfo);
                 dgvBooks.Rows[rowIndex].Tag = book;
 
-                if (book.AvailableCopies <= 0)
+                // Проверка: есть ли невозвращенная выдача более 30 дней назад
+                bool hasOverdueLoan = book.BookLoans != null && book.BookLoans.Any(l =>
+                    l.ReturnDate == null && l.LoanDate <= DateOnly.FromDateTime(thirtyDaysAgo));
+
+                if (hasOverdueLoan)
                 {
-                    dgvBooks.Rows[rowIndex].DefaultCellStyle.BackColor = ColorTranslator.FromHtml("#FFD1D1");
+                    // Долгосрочная выдача (>30 дней): светло-зеленый
+                    dgvBooks.Rows[rowIndex].DefaultCellStyle.BackColor = ColorTranslator.FromHtml("#D4EDDA");
+                }
+                else if (book.AvailableCopies <= 0)
+                {
+                    // Нет в наличии (0 экз.): светло-красный
+                    dgvBooks.Rows[rowIndex].DefaultCellStyle.BackColor = ColorTranslator.FromHtml("#FFCCCC");
+                }
+                else if (book.AvailableCopies <= 2)
+                {
+                    // Мало экземпляров (1-2 экз.): светло-желтый
+                    dgvBooks.Rows[rowIndex].DefaultCellStyle.BackColor = ColorTranslator.FromHtml("#FFF3CD");
                 }
                 else
                 {
+                    // Обычные строки
                     dgvBooks.Rows[rowIndex].DefaultCellStyle.BackColor = (rowIndex % 2 == 0)
                         ? Color.White
                         : ColorTranslator.FromHtml("#FFF8F0");
@@ -188,7 +208,8 @@ namespace ChitayGorod
 
         private Image GetBookCover(string? fileName)
         {
-            string placeholderPath = Path.Combine(Application.StartupPath, "Images", "book_placeholder.jpeg");
+            string placeholderPng = Path.Combine(Application.StartupPath, "Images", "book_placeholder.png");
+            string placeholderJpeg = Path.Combine(Application.StartupPath, "Images", "book_placeholder.jpeg");
 
             if (!string.IsNullOrWhiteSpace(fileName))
             {
@@ -200,9 +221,10 @@ namespace ChitayGorod
                 }
             }
 
-            if (File.Exists(placeholderPath))
+            string validPlaceholder = File.Exists(placeholderPng) ? placeholderPng : placeholderJpeg;
+            if (File.Exists(validPlaceholder))
             {
-                using var stream = new FileStream(placeholderPath, FileMode.Open, FileAccess.Read);
+                using var stream = new FileStream(validPlaceholder, FileMode.Open, FileAccess.Read);
                 return Image.FromStream(stream);
             }
 
