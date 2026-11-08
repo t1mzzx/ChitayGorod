@@ -71,6 +71,7 @@
             btnIssueBook.TabIndex = 2;
             btnIssueBook.Text = "Выдать книгу";
             btnIssueBook.UseVisualStyleBackColor = false;
+            btnIssueBook.Click += btnIssueBook_Click;
             // 
             // btnAddBook
             // 

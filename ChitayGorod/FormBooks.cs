@@ -269,5 +269,16 @@ namespace ChitayGorod
                 }
             }
         }
+
+        private void btnIssueBook_Click(object sender, EventArgs e)
+        {
+            using (var form = new FormIssueBook())
+            {
+                if (form.ShowDialog() == DialogResult.OK)
+                {
+                    LoadBooksList();
+                }
+            }
+        }
     }
 }
